@@ -1,0 +1,23 @@
+{
+  "editor.defaultFormatter": "esbenp.prettier-vscode",
+  "[javascript]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "[go]": {
+    "editor.defaultFormatter": "golang.go"
+  },
+  "editor.formatOnSave": true,
+  "prettier.printWidth": 150,
+  "prettier.tabWidth": 2,
+  "prettier.useTabs": false,
+  "prettier.semi": false,
+  "prettier.quoteProps": "as-needed",
+  "prettier.trailingComma": "none",
+  "prettier.bracketSpacing": true,
+  "prettier.singleQuote": true,
+  "prettier.arrowParens": "always",
+  "prettier.endOfLine": "lf",
+  "[json]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  }
+}
