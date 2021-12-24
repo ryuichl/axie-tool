@@ -125,6 +125,18 @@ exports.get_balance = async (address, token = 'slp') => {
   return Number(balance)
 }
 
+exports.has_claimable_slp = async (address) => {
+  const options = {
+    method: 'GET',
+    url: `https://game-api.skymavis.com/game-api/clients/${address}/items/1`,
+    responseType: 'json',
+    resolveBodyOnly: true
+  }
+  const slp_in_game = await got(options)
+  console.log(slp_in_game)
+  return true
+}
+
 const get_random_msg = async () => {
   const options = {
     method: 'POST',
@@ -282,4 +294,24 @@ exports.get_receipt = async (hash) => {
   const web3 = new Web3(new Web3.providers.HttpProvider(RONIN_PROVIDER_FREE))
   const receipt = await web3.eth.getTransactionReceipt(hash)
   return receipt
+}
+
+exports.transfer_slp = async (from_address, private_key, to_address, amount) => {
+  const web3 = new Web3(new Web3.providers.HttpProvider(RONIN_PROVIDER_FREE))
+  const contract = new web3.eth.Contract(abi, web3.utils.toChecksumAddress(SLP_CONTRACT))
+  const nonce = await get_nonce(from_address)
+  const encodeABI = await contract.methods.transfer(web3.utils.toChecksumAddress(to_address), amount).encodeABI()
+  const signed_claim = await web3.eth.accounts.signTransaction(
+    {
+      nonce: nonce,
+      chainId: 2020,
+      to: web3.utils.toChecksumAddress(SLP_CONTRACT),
+      data: encodeABI,
+      gasPrice: 0,
+      gas: 246437
+    },
+    private_key
+  )
+  const send_claim = await web3.eth.sendSignedTransaction(signed_claim.rawTransaction)
+  return send_claim
 }
