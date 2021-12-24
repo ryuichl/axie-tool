@@ -15,52 +15,31 @@ const abi = [
     inputs: [
       {
         internalType: 'address',
-        name: '_from',
-        type: 'address'
-      },
-      {
-        internalType: 'address',
-        name: '_to',
+        name: '_owner',
         type: 'address'
       },
       {
         internalType: 'uint256',
-        name: '_tokenId',
-        type: 'uint256'
-      }
-    ],
-    name: 'safeTransferFrom',
-    outputs: [
-      {
-        internalType: 'bool',
-        name: '_success',
-        type: 'bool'
-      }
-    ],
-    payable: false,
-    stateMutability: 'nonpayable',
-    type: 'function'
-  },
-  {
-    constant: false,
-    inputs: [
-      {
-        internalType: 'uint256',
-        name: '_sireId',
+        name: '_amount',
         type: 'uint256'
       },
       {
         internalType: 'uint256',
-        name: '_matronId',
+        name: '_createdAt',
         type: 'uint256'
+      },
+      {
+        internalType: 'bytes',
+        name: '_signature',
+        type: 'bytes'
       }
     ],
-    name: 'breedAxies',
+    name: 'checkpoint',
     outputs: [
       {
-        internalType: 'bool',
-        name: '_success',
-        type: 'bool'
+        internalType: 'uint256',
+        name: '_balance',
+        type: 'uint256'
       }
     ],
     payable: false,
@@ -89,29 +68,29 @@ const abi = [
     type: 'function'
   },
   {
-    constant: true,
+    constant: false,
     inputs: [
       {
         internalType: 'address',
-        name: '_owner',
+        name: '_to',
         type: 'address'
       },
       {
         internalType: 'uint256',
-        name: '_index',
+        name: '_value',
         type: 'uint256'
       }
     ],
-    name: 'tokenOfOwnerByIndex',
+    name: 'transfer',
     outputs: [
       {
-        internalType: 'uint256',
-        name: '',
-        type: 'uint256'
+        internalType: 'bool',
+        name: '_success',
+        type: 'bool'
       }
     ],
     payable: false,
-    stateMutability: 'view',
+    stateMutability: 'nonpayable',
     type: 'function'
   }
 ]
@@ -159,7 +138,7 @@ const get_random_msg = async () => {
     resolveBodyOnly: true
   }
   const result = await got(options)
-  return result
+  return result.data.createRandomMessage
   // {
   //   data: {
   //     createRandomMessage: 'Lunacia Kingdom\n' +
@@ -171,9 +150,9 @@ const get_random_msg = async () => {
 exports.get_random_msg = get_random_msg
 
 const get_jwt = async (address, private_key) => {
-  const msg = await ronin_handler.get_random_msg()
+  const msg = await get_random_msg()
   const web3 = new Web3()
-  const sign_result = web3.eth.accounts.sign(msg.data.createRandomMessage, private_key)
+  const sign_result = web3.eth.accounts.sign(msg, private_key)
   const options = {
     method: 'POST',
     url: 'https://graphql-gateway.axieinfinity.com/graphql',
@@ -183,7 +162,7 @@ const get_jwt = async (address, private_key) => {
         input: {
           mainnet: 'ronin',
           owner: address,
-          message: msg.data.createRandomMessage,
+          message: msg,
           signature: sign_result.signature
         }
       },
@@ -196,7 +175,7 @@ const get_jwt = async (address, private_key) => {
     resolveBodyOnly: true
   }
   const result = await got(options)
-  return result
+  return result.data.createAccessTokenWithSignature.accessToken
   // {
   //   data: {
   //     createAccessTokenWithSignature: {
@@ -209,3 +188,98 @@ const get_jwt = async (address, private_key) => {
   // }
 }
 exports.get_jwt = get_jwt
+
+const get_nonce = (address) => {
+  const web3 = new Web3(new Web3.providers.HttpProvider(RONIN_PROVIDER_FREE))
+  const nonce = web3.eth.getTransactionCount(web3.utils.toChecksumAddress(address))
+  return nonce
+}
+exports.get_nonce = get_nonce
+
+const apply_claim = async (address, private_key) => {
+  const jwt = await get_jwt(address, private_key)
+  const options = {
+    method: 'POST',
+    url: `https://game-api.skymavis.com/game-api/clients/${address}/items/1/claim`,
+    headers: {
+      authorization: `Bearer ${jwt}`
+    },
+    json: {},
+    responseType: 'json',
+    resolveBodyOnly: true
+  }
+  const result = await got(options)
+  return result.blockchain_related.signature
+  // {
+  //   success: true,
+  //   client_id: '0xbe9bada603beb033fefcabe44f71246b3152283f',
+  //   item_id: 1,
+  //   total: 400,
+  //   blockchain_related: {
+  //     signature: {
+  //       signature: '0x01c531f7cef250ed631f4db7625a204d3723371981fe1edce37bcfd2cb29004f492b650d1663e05f3815ba9a8b4c76da8db6fb7fe68f6c4e0e8d1a5b4f0740ab9a1b',
+  //       amount: 4485,
+  //       timestamp: 1640316197
+  //     },
+  //     balance: 0,
+  //     checkpoint: 4085,
+  //     block_number: 8919600
+  //   },
+  //   claimable_total: 400,
+  //   last_claimed_item_at: 1640316197,
+  //   raw_total: 4485,
+  //   raw_claimable_total: 4485,
+  //   item: {
+  //     id: 1,
+  //     name: 'Breeding Potion',
+  //     description: 'Breeding Potion is required to breed two Axies',
+  //     image_url: '',
+  //     updated_at: 1576669291,
+  //     created_at: 1576669291
+  //   }
+  // }
+}
+exports.apply_claim = apply_claim
+
+exports.send_claim = async (address, private_key) => {
+  const signature = await apply_claim(address, private_key)
+  const web3 = new Web3(new Web3.providers.HttpProvider(RONIN_PROVIDER_FREE))
+  const contract = new web3.eth.Contract(abi, web3.utils.toChecksumAddress(SLP_CONTRACT))
+  const nonce = await get_nonce(address)
+  const encodeABI = await contract.methods
+    .checkpoint(web3.utils.toChecksumAddress(address), signature.amount, signature.timestamp, signature.signature)
+    .encodeABI()
+  const signed_claim = await web3.eth.accounts.signTransaction(
+    {
+      nonce: nonce,
+      to: web3.utils.toChecksumAddress(SLP_CONTRACT),
+      data: encodeABI,
+      gasPrice: 0,
+      gas: 492874
+    },
+    private_key
+  )
+  const send_claim = await web3.eth.sendSignedTransaction(signed_claim.rawTransaction)
+  return send_claim
+  // {
+  //   blockHash: '0xef58c47b6352920020eb5df9fce60d2ff513c2126fe169a3cc87de03197f4e9c',
+  //   blockNumber: 9582200,
+  //   contractAddress: null,
+  //   cumulativeGasUsed: 4807354,
+  //   from: '0xbe9bada603beb033fefcabe44f71246b3152283f',
+  //   gasUsed: 74908,
+  //   logs: [ [Object], [Object] ],
+  //   logsBloom: '0x00040000000000000000000000000000000000000000000000000000000000000000100000000000000040000000000000000000000000000000000000000000000000000000000000000008000000000000000000000200000000000000000000000000020000000000000000000800000000000000000000000010000000000000000000000000000000000000000000000000000000400000000100000000000000000000000000000400000000000000000000000000000000020000000000000002000000000000000000000000010000000002000000020000000020000000000000001000000000000000000000000000000000000000000000000000',
+  //   status: true,
+  //   to: '0xa8754b9fa15fc18bb59458815510e40a12cd2014',
+  //   transactionHash: '0xfba57d602f1c3bc84d515b2221eef141c28cd9254ff74d79f1c0003c1ef100c4',
+  //   transactionIndex: 36,
+  //   type: '0x0'
+  // }
+}
+
+exports.get_receipt = async (hash) => {
+  const web3 = new Web3(new Web3.providers.HttpProvider(RONIN_PROVIDER_FREE))
+  const receipt = await web3.eth.getTransactionReceipt(hash)
+  return receipt
+}
