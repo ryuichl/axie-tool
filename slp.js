@@ -64,7 +64,7 @@
         }
         const scholar_address = scholar_info[e.i - 1].address || scholar_info[scholar_info[e.i - 1].leader - 1].address
         const amount = Math.round(e.slp / 2)
-        await ronin_handler.transfer_slp(main_wallet.address, main_wallet.privateKey, scholar_address, amount)
+        await ronin_handler.transfer_slp(main_wallet.address, main_wallet.privateKey, scholar_address.replace('ronin:', '0x'), amount)
         return { i: e.i, slp: amount, address: scholar_address }
       })
       await fs.writeJSON('./db/pay.json', record)
