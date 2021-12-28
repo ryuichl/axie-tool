@@ -2,6 +2,7 @@ const Web3 = require('web3')
 const got = require('got')
 const bip39 = require('bip39')
 const { hdkey } = require('ethereumjs-wallet')
+const dayjs = require('dayjs')
 
 const SLP_CONTRACT = '0xa8754b9fa15fc18bb59458815510e40a12cd2014'
 const AXS_CONTRACT = '0x97a9107c1793bc407d6f527b77e7fff4d812bece'
@@ -105,7 +106,7 @@ exports.get_key = (mnemonic, index) => {
   return { address: address, privateKey: privateKey }
 }
 
-exports.get_balance = async (address, token = 'slp') => {
+const get_balance = async (address, token = 'slp') => {
   let contract_address = ''
   if (token === 'slp') {
     contract_address = SLP_CONTRACT
@@ -124,6 +125,7 @@ exports.get_balance = async (address, token = 'slp') => {
   }
   return Number(balance)
 }
+exports.get_balance = get_balance
 
 exports.has_claimable_slp = async (address) => {
   const options = {
@@ -133,8 +135,43 @@ exports.has_claimable_slp = async (address) => {
     resolveBodyOnly: true
   }
   const slp_in_game = await got(options)
-  console.log(slp_in_game)
-  return true
+  // console.log(slp_in_game)
+  const slp_in_wallet = await get_balance(address, 'slp')
+  if (dayjs.unix(slp_in_game.last_claimed_item_at).add(14, 'day').isAfter(dayjs())) {
+    return 0
+  }
+  if (slp_in_wallet === 0 && slp_in_game.raw_total > slp_in_game.raw_claimable_total) {
+    return slp_in_game.raw_total - slp_in_game.raw_claimable_total
+  }
+  return 0
+  // {
+  //   success: true,
+  //   client_id: '0x945767c0f245ffd7a4f2279b18f05f20b7531233',
+  //   item_id: 1,
+  //   total: 8824,
+  //   blockchain_related: {
+  //     signature: {
+  //       signature: '0x01a25dd690e0665a55e87ee5b940e34b7e2db06624894d68158872d52365b5cda00926bfa54d229527b744c6cd9c5c7747daab324720356e694f3e87981608f9df1c',
+  //       amount: 11941,
+  //       timestamp: 1639496939
+  //     },
+  //     balance: 0,
+  //     checkpoint: 5724,
+  //     block_number: 7954969
+  //   },
+  //   claimable_total: 6217,
+  //   last_claimed_item_at: 1639496939,
+  //   raw_total: 14548,
+  //   raw_claimable_total: 11941,
+  //   item: {
+  //     id: 1,
+  //     name: 'Breeding Potion',
+  //     description: 'Breeding Potion is required to breed two Axies',
+  //     image_url: '',
+  //     updated_at: 1576669291,
+  //     created_at: 1576669291
+  //   }
+  // }
 }
 
 const get_random_msg = async () => {

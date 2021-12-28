@@ -18,9 +18,13 @@
   "homepage": "https://github.com/ryuichl/web3#readme",
   "dependencies": {
     "bip39": "^3.0.4",
+    "bluebird": "^3.7.2",
+    "dayjs": "^1.10.7",
+    "dotenv": "^10.0.0",
     "ethereumjs-wallet": "^1.0.2",
     "fs-extra": "^10.0.0",
     "got": "^11.8.3",
-    "web3": "^1.6.1"
+    "web3": "^1.6.1",
+    "yargs": "^17.3.1"
   }
 }
