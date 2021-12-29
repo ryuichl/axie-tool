@@ -19,7 +19,7 @@
         console.log({ i: i + 1, slp })
         return { i: i + 1, slp }
       })
-      await fs.writeJSON('./db/record.json', record)
+      await fs.outputJson('./db/record.json', record)
       return process.exit(0)
     }
     if (argv.job === 'claim') {
@@ -34,7 +34,7 @@
         const balance = await ronin_handler.get_balance(wallet.address, 'slp')
         return { i: i + 1, slp: balance }
       })
-      await fs.writeJSON('./db/claim.json', record)
+      await fs.outputJson('./db/claim.json', record)
       return process.exit(0)
     }
     if (argv.job === 'collect') {
@@ -43,12 +43,20 @@
         const balance = await ronin_handler.get_balance(wallet.address, 'slp')
         console.log({ i: i + 1, slp: balance })
         if (balance === 0) {
-          return { i: i + 1, slp: 2 }
+          return { i: i + 1, slp: 0 }
         }
         await ronin_handler.transfer_slp(wallet.address, wallet.privateKey, main_wallet.address, balance)
         return { i: i + 1, slp: balance }
       })
-      await fs.writeJSON('./db/collect.json', record)
+      await fs.outputJson('./db/collect.json', record)
+      return process.exit(0)
+    }
+    if (argv.job === 'count') {
+      const collect = await fs.readJSON('./db/collect.json')
+      const count = collect.reduce((count, e) => {
+        return count + e.slp
+      }, 0)
+      console.log(count)
       return process.exit(0)
     }
     if (argv.job === 'pay') {
@@ -69,7 +77,7 @@
         await ronin_handler.transfer_slp(main_wallet.address, main_wallet.privateKey, scholar_address, amount)
         return { i: e.i, slp: amount, address: scholar_address }
       })
-      await fs.writeJSON('./db/pay.json', record)
+      await fs.outputJson('./db/pay.json', record)
       return process.exit(0)
     }
   } catch (err) {
