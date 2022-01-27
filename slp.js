@@ -12,7 +12,33 @@
     const total = 82
     const main_wallet = ronin_handler.get_key(mnemonic, 1)
 
-    if (argv.job === 'record') {
+    if (argv.job === 'csv') {
+      let info = await fs.readJSON('./db/info.json')
+      let scholar = await fs.readFile('./db/scholar.txt', 'utf8')
+      scholar.split('\n').map((e, index) => {
+        if (!info[index]) {
+          info[index] = { i: index + 1, address: '' }
+        }
+        e = e.split('\t')
+        const name = e[0]
+        const extra = e[1]
+        const address = e[2]
+        if (!address) {
+          info[index] = { i: index + 1, address: '' }
+        } else if (address.includes('ronin:')) {
+          info[index].name = name
+          info[index].extra = extra ? true : false
+          info[index].address = address
+        } else {
+          const number = address.split(',')[0]
+          info[index].name = name
+          info[index].extra = extra ? true : false
+          info[index].address = info[number - 1].address
+        }
+      })
+      await fs.writeJSON('./db/info.json', info)
+      return process.exit(0)
+    } else if (argv.job === 'record') {
       const record = await Promise.map(
         [...Array(total)],
         async (e, i) => {
