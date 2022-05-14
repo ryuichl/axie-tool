@@ -281,7 +281,7 @@ const get_jwt = async (address, private_key) => {
 exports.get_jwt = get_jwt
 
 const get_nonce = (address) => {
-  const web3 = new Web3(new Web3.providers.HttpProvider(RONIN_PROVIDER_FREE))
+  const web3 = new Web3(new Web3.providers.HttpProvider(RONIN_PROVIDER))
   const nonce = web3.eth.getTransactionCount(web3.utils.toChecksumAddress(address))
   return nonce
 }
@@ -337,7 +337,7 @@ exports.send_claim = async (address, private_key) => {
     .forever(async () => {
       try {
         const signature = await apply_claim(address, private_key)
-        const web3 = new Web3(new Web3.providers.HttpProvider(RONIN_PROVIDER_FREE))
+        const web3 = new Web3(new Web3.providers.HttpProvider(RONIN_PROVIDER))
         const contract = new web3.eth.Contract(abi, web3.utils.toChecksumAddress(SLP_CONTRACT))
         const nonce = await get_nonce(address)
         const encodeABI = await contract.methods
@@ -348,7 +348,7 @@ exports.send_claim = async (address, private_key) => {
             nonce: nonce,
             to: web3.utils.toChecksumAddress(SLP_CONTRACT),
             data: encodeABI,
-            gasPrice: 0,
+            gasPrice: web3.utils.toWei('1', 'gwei'),
             gas: 492874
           },
           private_key
@@ -386,7 +386,7 @@ exports.send_claim = async (address, private_key) => {
 }
 
 exports.get_receipt = async (hash) => {
-  const web3 = new Web3(new Web3.providers.HttpProvider(RONIN_PROVIDER_FREE))
+  const web3 = new Web3(new Web3.providers.HttpProvider(RONIN_PROVIDER))
   const receipt = await web3.eth.getTransactionReceipt(hash)
   return receipt
 }
@@ -395,7 +395,7 @@ exports.transfer_slp = async (from_address, private_key, to_address, amount) => 
   await async
     .forever(async () => {
       try {
-        const web3 = new Web3(new Web3.providers.HttpProvider(RONIN_PROVIDER_FREE))
+        const web3 = new Web3(new Web3.providers.HttpProvider(RONIN_PROVIDER))
         const contract = new web3.eth.Contract(abi, web3.utils.toChecksumAddress(SLP_CONTRACT))
         const nonce = await get_nonce(from_address)
         const encodeABI = await contract.methods.transfer(web3.utils.toChecksumAddress(to_address), amount).encodeABI()
@@ -405,7 +405,7 @@ exports.transfer_slp = async (from_address, private_key, to_address, amount) => 
             chainId: 2020,
             to: web3.utils.toChecksumAddress(SLP_CONTRACT),
             data: encodeABI,
-            gasPrice: 0,
+            gasPrice: web3.utils.toWei('1', 'gwei'),
             gas: 246437
           },
           private_key
