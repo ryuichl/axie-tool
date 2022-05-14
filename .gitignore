@@ -1,3 +1,5 @@
+db/backup/*
+
 # Logs
 logs
 *.log

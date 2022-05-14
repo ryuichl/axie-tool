@@ -17,6 +17,7 @@
   },
   "homepage": "https://github.com/ryuichl/web3#readme",
   "dependencies": {
+    "async": "^3.2.3",
     "bip39": "^3.0.4",
     "bluebird": "^3.7.2",
     "dayjs": "^1.10.7",
