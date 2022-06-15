@@ -155,7 +155,7 @@ exports.get_balance = get_balance
 exports.has_claimable_slp = async (address) => {
   const options = {
     method: 'GET',
-    url: `https://game-api.skymavis.com/game-api/clients/${address}/items/1`,
+    url: `https://game-api-pre.skymavis.com/v1/players/${address}/items/1`,
     responseType: 'json',
     resolveBodyOnly: true
   }
@@ -163,56 +163,46 @@ exports.has_claimable_slp = async (address) => {
     console.log('log2', err)
     return Promise.reject(err)
   })
-  // console.log(slp_in_game)
   const slp_in_wallet = await get_balance(address, 'slp').catch((err) => {
     console.log('log1', err)
     return Promise.reject(err)
   })
-  // if (dayjs.unix(slp_in_game.last_claimed_item_at).add(14, 'day').isAfter(dayjs())) {
-  //   return 0
-  // }
   if (
-    dayjs.unix(slp_in_game.last_claimed_item_at).add(14, 'day').isBefore(dayjs()) &&
+    dayjs.unix(slp_in_game.lastClaimedItemAt).add(14, 'day').isBefore(dayjs()) &&
     slp_in_wallet === 0 &&
-    slp_in_game.raw_total > slp_in_game.raw_claimable_total
+    slp_in_game.rawTotal > slp_in_game.rawClaimableTotal
   ) {
-    return slp_in_game.raw_total - slp_in_game.raw_claimable_total
+    return slp_in_game.rawTotal - slp_in_game.rawClaimableTotal
   }
   if (
     slp_in_wallet === 0 &&
-    slp_in_game.blockchain_related.signature &&
-    slp_in_game.blockchain_related.signature.amount > slp_in_game.blockchain_related.checkpoint
+    slp_in_game.blockchainRelated.signature &&
+    slp_in_game.blockchainRelated.signature.amount > slp_in_game.blockchainRelated.checkpoint
   ) {
-    return slp_in_game.blockchain_related.signature.amount - slp_in_game.blockchain_related.checkpoint
+    return slp_in_game.blockchainRelated.signature.amount - slp_in_game.blockchainRelated.checkpoint
   }
   return 0
   // {
-  //   success: true,
-  //   client_id: '0x945767c0f245ffd7a4f2279b18f05f20b7531233',
-  //   item_id: 1,
-  //   total: 8824,
-  //   blockchain_related: {
-  //     signature: {
-  //       signature: '0x01a25dd690e0665a55e87ee5b940e34b7e2db06624894d68158872d52365b5cda00926bfa54d229527b744c6cd9c5c7747daab324720356e694f3e87981608f9df1c',
-  //       amount: 11941,
-  //       timestamp: 1639496939
+  //   "clientID": "0x445aaa7c84d6811494f2e5571599d622e4de601e",
+  //   "itemID": 1,
+  //   "name": "Breeding Potion",
+  //   "description": "Breeding Potion",
+  //   "imageUrl": "",
+  //   "total": 1039,
+  //   "blockchainRelated": {
+  //     "signature": {
+  //       "signature": "0x01668a7b8efe8ce5a8b7cf174e3f4c985e30c3b5003440d2db2b7fb3295838e51c48b3f9d436466bb8e2c6b795ddb2390ee7bb2c8b249c267bb9b95b6e04bed9b72c",
+  //       "amount": 100,
+  //       "timestamp": 1649664080
   //     },
-  //     balance: 0,
-  //     checkpoint: 5724,
-  //     block_number: 7954969
+  //     "balance": 1000,
+  //     "checkpoint": 70,
+  //     "blockNumber": 1256
   //   },
-  //   claimable_total: 6217,
-  //   last_claimed_item_at: 1639496939,
-  //   raw_total: 14548,
-  //   raw_claimable_total: 11941,
-  //   item: {
-  //     id: 1,
-  //     name: 'Breeding Potion',
-  //     description: 'Breeding Potion is required to breed two Axies',
-  //     image_url: '',
-  //     updated_at: 1576669291,
-  //     created_at: 1576669291
-  //   }
+  //   "claimableTotal": 1039,
+  //   "lastClaimedItemAt": 1649664080,
+  //   "rawTotal": 109,
+  //   "rawClaimableTotal": 100
   // }
 }
 
@@ -291,7 +281,7 @@ const apply_claim = async (address, private_key) => {
   const jwt = await get_jwt(address, private_key)
   const options = {
     method: 'POST',
-    url: `https://game-api.skymavis.com/game-api/clients/${address}/items/1/claim`,
+    url: `https://game-api-pre.skymavis.com/v1/players/me/items/1/claim`,
     headers: {
       authorization: `Bearer ${jwt}`
     },
@@ -300,34 +290,28 @@ const apply_claim = async (address, private_key) => {
     resolveBodyOnly: true
   }
   const result = await got(options)
-  return result.blockchain_related.signature
+  return result.blockchainRelated.signature
   // {
-  //   success: true,
-  //   client_id: '0xbe9bada603beb033fefcabe44f71246b3152283f',
-  //   item_id: 1,
-  //   total: 400,
-  //   blockchain_related: {
-  //     signature: {
-  //       signature: '0x01c531f7cef250ed631f4db7625a204d3723371981fe1edce37bcfd2cb29004f492b650d1663e05f3815ba9a8b4c76da8db6fb7fe68f6c4e0e8d1a5b4f0740ab9a1b',
-  //       amount: 4485,
-  //       timestamp: 1640316197
+  //   "clientID": "0x445aaa7c84d6811494f2e5571599d622e4de601e",
+  //   "itemID": 1,
+  //   "name": "Breeding Potion",
+  //   "description": "Breeding Potion",
+  //   "imageUrl": "",
+  //   "total": 1039,
+  //   "blockchainRelated": {
+  //     "signature": {
+  //       "signature": "0x01668a7b8efe8ce5a8b7cf174e3f4c985e30c3b5003440d2db2b7fb3295838e51c48b3f9d436466bb8e2c6b795ddb2390ee7bb2c8b249c267bb9b95b6e04bed9b71b",
+  //       "amount": 109,
+  //       "timestamp": 1651046488
   //     },
-  //     balance: 0,
-  //     checkpoint: 4085,
-  //     block_number: 8919600
+  //     "balance": 1000,
+  //     "checkpoint": 70,
+  //     "blockNumber": 1256
   //   },
-  //   claimable_total: 400,
-  //   last_claimed_item_at: 1640316197,
-  //   raw_total: 4485,
-  //   raw_claimable_total: 4485,
-  //   item: {
-  //     id: 1,
-  //     name: 'Breeding Potion',
-  //     description: 'Breeding Potion is required to breed two Axies',
-  //     image_url: '',
-  //     updated_at: 1576669291,
-  //     created_at: 1576669291
-  //   }
+  //   "claimableTotal": 1039,
+  //   "lastClaimedItemAt": 1651046488,
+  //   "rawTotal": 109,
+  //   "rawClaimableTotal": 109
   // }
 }
 exports.apply_claim = apply_claim
